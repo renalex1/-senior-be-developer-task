@@ -1,58 +1,167 @@
-# senior-be-developer-task
+## What Has Been Done
 
-## Introduction 
-Hello! If you are viewing this repository you are probably a candidate for HyperGuest senior backend developer, congrats!
-
-Before we begin, a few important notes please!
-* Any AI tool is forbidden during this task. We already know Github copilot is a great tool, we don't need to test it :) 
-* This task is designated to test your problem-solving skills, still, code quality do matters! submit a code you would like to read as well
-* At your sumption please include the next things :
-    -  your implementation of `Queues.ts`. Any other files are not allowed to be changed during this test.
-    -  write a clear explanation of your implementation.
-    -  suggest improvements! the code in this repository is not perfect, what would you do differently?
-* Do not PR to this repo! if you would, all of your opponents would copy your answers ;)
-
-Good luck!
-
-## Task description
-
-The code in this repo is not working properly. 
-
-The script `main.ts` is trying to write "a lot" of data into a simulation of a key-value database ( implemented in `Datable.ts`). As Databases usually do - our database has small latency - between 0 to 100 ms per operation. 
-In order to allow faster process of the messages our `main.ts` script puts all the operations in a queue (see the `Queue.ts` file). Than it launches a random number (between 3 to 6) of "workers" (see `Worker.ts`), that works asynchronously in parallel, reading messages from the queue and commit the operation to the "Database". Each worker should "confirm" to the queue that the message was proceeded, so the message would be deleted.
-The script wait for 10 seconds (enough time for all the workers to complete the work), prints the state of hte queue and the DB state, and exits. 
-
-However! <br />
-the results are wrong :( <br /> 
-We set all the initial values to 50, and than we add all numbers between 1 to 9 for each item. therefore the correct results so the correct output should be:
-```bash
-# > ts-node main.ts
-Number of items:3
-Number of workers:5
-Queue size:  0
-DB state:
- {
-    "item2": 95,
-    "item0": 95,
-    "item1": 95
-}
-```
+### `Queue.ts`
+- Added TypeScript interfaces for correct type checking and better TypeScript support.
+- Introduced constants for retry count, dynamic retry delay, and maximum processing time (in milliseconds).
+- Added a locking mechanism to the `Enqueue` method, along with a retry counter and dynamic retry time.
+- In the `Dequeue` method:
+  - First, try to find the message by index.
+  - If no message is found, the worker exits and returns undefined.
+  - Otherwise, the task is locked, a progress ID is generated, and a timestamp is added.
+- Implemented a retry mechanism with a maximum of 5 retries and a progressively increasing retry delay.
+- Added **`ForceUnlock`** method to optionally release a lock on a message based on its key, which could be useful for debugging or special use cases.
+- Added **`GetDeadQueue`** method to optionally retrieve dead messages that failed after retry attempts.
+- Added **`RetryDeadQueue`** method to optionally retry processing dead messages that have not exceeded the maximum retry limit.
 
 
-While running the script would look like this (different values would be shown on each run):
-```bash
-# > ts-node main.ts
-Number of items:3
-Number of workers:5
-Queue size:  0
-DB state:
- {
-    "item2": 74,
-    "item0": 74,
-    "item1": 15
-}
-```
+## QueueBasic.ts
+The QueueBasic.ts class simplifies the queue logic by removing features like retry mechanisms and the handling of dead messages. It focuses on basic queue operations: enqueueing, dequeuing, confirming, and checking the size
 
-Please assist our dev team to implement a valid version of `Queue.ts`! 
+## QueueBasicState.ts
+QueueBasicState.ts implements a simple in-memory task queue that supports basic lifecycle operations:
 
-*note*: Any implementation that would effectively not allow any parallel work between the workers would be rejected.
+- Enqueue: Adds a new message if it hasn’t been added before.
+
+- Dequeue: Assigns the next available message to a worker, ensuring only one task with the same key is processed at a time.
+
+- Confirm: Marks a task as done only if the correct worker confirms it.
+
+- State Tracking: Each task has a state (queued, processing, done) and tracks how many times it's been attempted.
+
+- Metrics: Methods like Size(), InProcessing(), and Done() provide insight into the current queue status.
+
+This version is focused on clarity and correctness without retry logic, expiration, or failure handling.
+
+## What Could Be Improved
+
+### `main.ts`
+- Since this is a simulation, it might be useful to add error handling and logging to improve the visibility of any issues and provide better diagnostics.
+
+### `Worker.ts`
+- Introduced a retry mechanism that increases the delay between each retry attempt.
+- Set a limit on the number of retry attempts to avoid infinite retries.
+- Added error handling and proposed saving error and success logs into a database for later analysis and fixes. I recommend using MongoDB for storing these logs.
+- In case of failure, we can add the message back to the queue to retry it later.
+- If a task fails after 5 retry attempts, it should be logged, and the worker should be restarted. If the issue persists, stop the worker and create a detailed error report in the database.
+
+## Additional Suggestions
+
+### Handling Different Error Types
+It would be beneficial to handle different types of errors, such as network or database errors. The retry logic could be tailored to handle specific error types. For example:
+
+- Skip retrying for certain errors.
+- Increase retries and the delay interval for others, based on the nature of the error.
+
+
+# Project Setup and Instructions
+
+To run this project, you can use either `npm` or `yarn` as your package manager. Below are the instructions to set up and run the project.
+
+## Prerequisites
+
+- Node.js installed on your machine.
+- TypeScript installed globally (`npm install -g typescript`), or as a project dependency.
+
+## Installation
+
+1. Clone the repository to your local machine.
+2. Navigate to the project directory.
+3. Install dependencies:
+
+   - Using `npm`:
+     ```bash
+     npm install
+     ```
+
+   - Using `yarn`:
+     ```bash
+     yarn install
+     ```
+
+## Scripts
+
+Here are the available scripts in the project:
+
+- **`build`**: Compiles the TypeScript code into JavaScript.
+  ```bash
+  npm run build
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn build
+  ```
+
+- **`start`**: Runs the compiled JavaScript code from the dist folder.
+  ```bash
+  npm run start
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn start
+  ```
+
+- **`dev`**: Runs the TypeScript code directly using `ts-node`. Useful for development and testing.
+  ```bash
+  npm run dev
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn dev
+  ```
+
+- **`watch`**: Starts the TypeScript compiler in watch mode, automatically recompiling code as you make changes.
+  ```bash
+  npm run watch
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn watch
+  ```
+
+## Running the Application
+
+After installing the dependencies, you can start the application by running:
+
+- **Development Mode:**
+  ```bash
+  npm run dev
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn dev
+  ```
+  This will run the code directly from TypeScript, allowing you to quickly test changes.
+
+- **Production Mode:**
+
+  First, build the TypeScript code:
+  ```bash
+  npm run build
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn build
+  ```
+
+  Then, start the compiled JavaScript application:
+  ```bash
+  npm run start
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn start
+  ```
+
+## Further Information
+
+If you'd like to contribute to the project or make changes, you can use the `watch` script to continuously recompile TypeScript files as you edit them. Simply run:
+
+  ```bash
+  npm run watch
+  ```
+  Or with `yarn`:
+  ```bash
+  yarn watch
+  ```
+
+This setup ensures that your development process is as smooth and efficient as possible.

@@ -1,0 +1,20 @@
+{
+  "name": "test-task",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "dev": "ts-node ./main.ts",
+    "watch": "tsc -w"
+  },
+  "keywords": [],
+  "author": "Aleksandr Babayan",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.4.0"
+  }
+}
